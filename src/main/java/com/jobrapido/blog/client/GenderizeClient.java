@@ -5,11 +5,11 @@ import com.jobrapido.blog.dto.Gender;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.time.Duration;
+import java.util.Optional;
 
 @Singleton
 public class GenderizeClient extends AbstractClient {
@@ -19,15 +19,8 @@ public class GenderizeClient extends AbstractClient {
         super(client, gson);
     }
 
-    public Gender genderize(String name) {
-        try {
-            return sendRequest(prepareHttpRequest(name), Gender.class)
-                    .orElseThrow();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+    public Optional<Gender> genderize(String name) {
+            return send(prepareHttpRequest(name), Gender.class);
     }
 
     private HttpRequest prepareHttpRequest(final String name) {

@@ -11,8 +11,10 @@ import javax.inject.Singleton;
         GsonModule.class,
         HttpModule.class
 })
-public interface ClientGraph {
+public interface ClientsComponent {
 
     GenderizeClient genderizeClient();
+
+    NationalizeClient nationalizeClient();
 
 }
