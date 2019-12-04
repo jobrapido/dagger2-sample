@@ -1,8 +1,5 @@
 package com.jobrapido.blog;
 
-
-import com.jobrapido.blog.controller.ControllerComponent;
-import com.jobrapido.blog.controller.DaggerControllerComponent;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 
@@ -12,15 +9,14 @@ public class SampleApp {
     private static final String HTTP_LISTENING_HOST = "0.0.0.0";
 
     public static void main(String... args) {
-        final ControllerComponent controllerComponent = DaggerControllerComponent.create();
+        final ApplicationGraph applicationGraph = DaggerApplicationGraph.create();
 
         final Undertow server = Undertow
                 .builder()
                 .addHttpListener(HTTP_SERVER_PORT, HTTP_LISTENING_HOST)
-                .setHandler(
-                        Handlers
+                .setHandler(Handlers
                                 .routing()
-                                .get("/person", controllerComponent.personInfoController()))
+                                .get("/person", applicationGraph.personInfoController()))
                 .build();
 
         server.start();

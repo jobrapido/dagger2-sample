@@ -1,8 +1,8 @@
 package com.jobrapido.blog.controller;
 
 import com.google.gson.Gson;
-import com.jobrapido.blog.client.ClientsComponent;
-import com.jobrapido.blog.client.DaggerClientsComponent;
+import com.jobrapido.blog.client.GenderizeClient;
+import com.jobrapido.blog.client.NationalizeClient;
 import com.jobrapido.blog.dto.Person;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -17,12 +17,16 @@ import java.util.Optional;
 public class PersonInfoController implements HttpHandler {
 
     private final Gson gson;
-    private final ClientsComponent clients;
+    private final GenderizeClient genderizeClient;
+    private final NationalizeClient nationalizeClient;
 
     @Inject
-    public PersonInfoController(final Gson gson) {
+    public PersonInfoController(final Gson gson,
+                                final GenderizeClient genderizeClient,
+                                final NationalizeClient nationalizeClient) {
         this.gson = gson;
-        this.clients = DaggerClientsComponent.create();
+        this.genderizeClient = genderizeClient;
+        this.nationalizeClient = nationalizeClient;
     }
 
     @Override
@@ -38,8 +42,8 @@ public class PersonInfoController implements HttpHandler {
                         .setStatusCode(StatusCodes.OK)
                         .getResponseSender()
                         .send(gson.toJson(new Person(name,
-                                clients.genderizeClient().genderize(name).orElse(null),
-                                clients.nationalizeClient().nationalize(name).orElse(null)))),
+                                genderizeClient.genderize(name).orElse(null),
+                                nationalizeClient.nationalize(name).orElse(null)))),
                 () -> exchange.setStatusCode(StatusCodes.NOT_FOUND));
 
 

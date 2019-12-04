@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.jobrapido.blog.client.response.NationalizeResponse;
 import com.jobrapido.blog.dto.Nationality;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,10 +11,8 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 
-@Singleton
 public class NationalizeClient extends AbstractClient {
 
-    @Inject
     NationalizeClient(final HttpClient client, final Gson gson) {
         super(client, gson);
     }

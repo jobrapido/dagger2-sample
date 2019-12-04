@@ -3,18 +3,14 @@ package com.jobrapido.blog.client;
 import com.google.gson.Gson;
 import com.jobrapido.blog.dto.Gender;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.time.Duration;
 import java.util.Optional;
 
-@Singleton
 public class GenderizeClient extends AbstractClient {
 
-    @Inject
     GenderizeClient(final HttpClient client, final Gson gson) {
         super(client, gson);
     }
