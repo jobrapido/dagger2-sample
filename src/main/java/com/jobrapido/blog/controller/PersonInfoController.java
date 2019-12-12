@@ -45,7 +45,5 @@ public class PersonInfoController implements HttpHandler {
                                 genderizeClient.genderize(name).orElse(null),
                                 nationalizeClient.nationalize(name).orElse(null)))),
                 () -> exchange.setStatusCode(StatusCodes.NOT_FOUND));
-
-
     }
 }

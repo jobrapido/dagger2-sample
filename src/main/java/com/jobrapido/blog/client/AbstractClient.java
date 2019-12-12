@@ -10,7 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 
-class AbstractClient {
+abstract class AbstractClient {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -22,7 +22,7 @@ class AbstractClient {
         this.gson = gson;
     }
 
-    protected <T> Optional<T> send(final HttpRequest request, final Class<T> clazz) {
+    <T> Optional<T> send(final HttpRequest request, final Class<T> clazz) {
         return Optional.ofNullable(send(request))
                 .filter(this::checkResponse)
                 .map(HttpResponse::body)

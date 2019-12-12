@@ -60,7 +60,7 @@ class GenderizeClientTest {
     }
 
     @Test
-    void shouldReturnParsedGenderForNonSuccessfulHttpApiCall() throws IOException, InterruptedException {
+    void shouldReturnEmptyOptionalWhenHttpCallIsNotSuccessful() throws IOException, InterruptedException {
         HttpResponse httpResponse = mock(HttpResponse.class);
 
         HttpRequest httpRequest = HttpRequest
@@ -88,6 +88,26 @@ class GenderizeClientTest {
         verify(httpClient).send(requestArgumentCaptor.capture(), any());
 
         assertEquals(URI.create("https://api.genderize.io?name=peter"), requestArgumentCaptor.getValue().uri());
+    }
+
+    @Test
+    void shouldReturnEmptyOptionalWhenHttpClientTrowAInterruptedException() throws IOException, InterruptedException {
+        when(httpClient.send(any(), any()))
+                .thenThrow(new InterruptedException());
+
+        Optional<Gender> actualGender = sut.genderize("peter");
+
+        assertFalse(actualGender.isPresent());
+    }
+
+    @Test
+    void shouldReturnEmptyOptionalWhenHttpClientTrowAIOException() throws IOException, InterruptedException {
+        when(httpClient.send(any(), any()))
+                .thenThrow(new IOException());
+
+        Optional<Gender> actualGender = sut.genderize("peter");
+
+        assertFalse(actualGender.isPresent());
     }
 
 }
