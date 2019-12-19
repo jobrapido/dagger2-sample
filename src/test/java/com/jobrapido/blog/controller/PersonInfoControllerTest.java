@@ -50,7 +50,7 @@ class PersonInfoControllerTest {
     static void clazzSetUp() throws IOException {
         final ServerSocket serverSocket = new ServerSocket(0);
         httpTestServerPort = serverSocket.getLocalPort();
-        httpTestListeningAddress = serverSocket.getInetAddress().getHostAddress();
+        httpTestListeningAddress = "127.0.0.1";
         serverSocket.close();
         httpTestBaseUrl = format("http://%s:%d", httpTestListeningAddress, httpTestServerPort);
         genderizeClient = mock(GenderizeClient.class);
@@ -86,9 +86,6 @@ class PersonInfoControllerTest {
     @Test
     void shouldReturnASuccessfulResponseWithPersonInformation() throws IOException, InterruptedException {
         HttpClient httpClient = HttpClient.newHttpClient();
-
-        doReturn(Optional.empty())
-                .when(genderizeClient).genderize(anyString());
 
         HttpResponse<String> actualHttpResponse = httpClient.send(
                 HttpRequest
