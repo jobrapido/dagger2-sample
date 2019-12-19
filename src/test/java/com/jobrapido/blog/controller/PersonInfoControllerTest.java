@@ -1,71 +1,118 @@
 package com.jobrapido.blog.controller;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.jobrapido.blog.client.GenderizeClient;
 import com.jobrapido.blog.client.NationalizeClient;
 import com.jobrapido.blog.dto.Gender;
 import com.jobrapido.blog.dto.Nationality;
-import io.undertow.io.Sender;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.StatusCodes;
+import com.jobrapido.blog.dto.Person;
+import io.undertow.Handlers;
+import io.undertow.Undertow;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayDeque;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Optional;
 
 import static com.jobrapido.blog.dto.Gender.GenderType.MALE;
-import static org.mockito.ArgumentMatchers.any;
+import static io.undertow.util.StatusCodes.NOT_FOUND;
+import static io.undertow.util.StatusCodes.OK;
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class PersonInfoControllerTest {
 
-    private GenderizeClient genderizeClient;
+    private static int httpTestServerPort;
+    private static String httpTestListeningAddress;
+    private static String httpTestBaseUrl;
 
-    private NationalizeClient nationalizeClient;
+    private static GenderizeClient genderizeClient;
 
-    private final Gson gson = new Gson();
+    private static NationalizeClient nationalizeClient;
 
-    private PersonInfoController sut;
+    private final static Gson gson = new Gson();
+
+    private static PersonInfoController sut;
+
+    private static Undertow server;
+
+    @BeforeAll
+    static void clazzSetUp() throws IOException {
+        final ServerSocket serverSocket = new ServerSocket(0);
+        httpTestServerPort = serverSocket.getLocalPort();
+        httpTestListeningAddress = serverSocket.getInetAddress().getHostAddress();
+        serverSocket.close();
+        httpTestBaseUrl = format("http://%s:%d", httpTestListeningAddress, httpTestServerPort);
+        genderizeClient = mock(GenderizeClient.class);
+        nationalizeClient = mock(NationalizeClient.class);
+
+        sut = new PersonInfoController(gson, genderizeClient, nationalizeClient);
+
+        server = Undertow
+                .builder()
+                .addHttpListener(httpTestServerPort, httpTestListeningAddress)
+                .setHandler(Handlers
+                        .routing()
+                        .get("/person", sut))
+                .build();
+
+        server.start();
+    }
 
     @BeforeEach
     void setUp() {
-        genderizeClient = mock(GenderizeClient.class);
-        nationalizeClient = mock(NationalizeClient.class);
-        sut = new PersonInfoController(gson, genderizeClient, nationalizeClient);
+        doReturn(Optional.of(new Gender(MALE, 0.9)))
+                .when(genderizeClient).genderize(anyString());
 
-        when(genderizeClient.genderize(anyString()))
-                .thenReturn(Optional.of(new Gender(MALE, 0.9)));
+        doReturn(Optional.of(new Nationality("us", 0.8)))
+                .when(nationalizeClient).nationalize(anyString());
+    }
 
-        when(nationalizeClient.nationalize(anyString()))
-                .thenReturn(Optional.of(new Nationality("us", 0.8)));
+    @AfterAll
+    static void tearDown() {
+        server.stop();
     }
 
     @Test
-    //TODO: not working
-    void shouldReturnASuccessfulResponseWithPersonInformation() {
-        HttpServerExchange exchange = mock(HttpServerExchange.class);
-        Sender sender = mock(Sender.class);
-        when(exchange.getResponseSender())
-                .thenReturn(sender);
-        when(exchange.setStatusCode(any()))
-                .thenReturn(exchange);
-        when(exchange.getQueryParameters())
-                .thenReturn(ImmutableMap.of("name",
-                        new ArrayDeque<>(ImmutableList.of("peter"))));
+    void shouldReturnASuccessfulResponseWithPersonInformation() throws IOException, InterruptedException {
+        HttpClient httpClient = HttpClient.newHttpClient();
 
-        sut.handleRequest(exchange);
+        doReturn(Optional.empty())
+                .when(genderizeClient).genderize(anyString());
 
-        verify(exchange).setStatusCode(StatusCodes.OK);
-        verify(exchange.getResponseSender()).send("{\"name\":\"peter\"," +
-                "\"gender\":{\"gender\":\"male\",\"probability\":0.9}," +
-                "\"nationality\":{\"country_id\":\"us\",\"probability\":0.8}}\n");
+        HttpResponse<String> actualHttpResponse = httpClient.send(
+                HttpRequest
+                        .newBuilder(URI.create(format("%s/person?name=%s", httpTestBaseUrl, "Stefano"))).GET()
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(OK, actualHttpResponse.statusCode());
+        final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
+        assertEquals("Stefano", actualPerson.getName());
+        assertEquals(new Gender(MALE, 0.9), actualPerson.getGender());
+        assertEquals(new Nationality("us", 0.8), actualPerson.getNationality());
     }
 
+    @Test
+    void shouldReturn404WhenNameParameterIsMissing() throws IOException, InterruptedException {
+        HttpClient httpClient = HttpClient.newHttpClient();
+
+        HttpResponse<String> actualHttpResponse = httpClient.send(
+                HttpRequest
+                        .newBuilder(URI.create(format("%s/person", httpTestBaseUrl))).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(NOT_FOUND, actualHttpResponse.statusCode());
+    }
 
 }
