@@ -1,6 +1,5 @@
 package com.jobrapido.blog.controller;
 
-import com.google.gson.Gson;
 import com.jobrapido.blog.ApplicationTestGraph;
 import com.jobrapido.blog.DaggerApplicationTestGraph;
 import com.jobrapido.blog.dto.Gender;
