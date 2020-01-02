@@ -6,6 +6,7 @@ import io.undertow.util.StatusCodes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,8 +23,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-//@ExtendWith(MockitoExtension.class)
-//TODO: check why @ExtendWith is not working
 class GenderizeClientTest {
 
     private ArgumentCaptor<HttpRequest> requestArgumentCaptor;
@@ -43,7 +42,7 @@ class GenderizeClientTest {
 
     @Test
     void shouldReturnParsedGenderForSuccessfulHttpApiCall() throws IOException, InterruptedException {
-        HttpResponse httpResponse = mock(HttpResponse.class);
+        final var httpResponse =  mock(HttpResponse.class);
 
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.OK);
@@ -61,7 +60,7 @@ class GenderizeClientTest {
 
     @Test
     void shouldReturnEmptyOptionalWhenHttpCallIsNotSuccessful() throws IOException, InterruptedException {
-        HttpResponse httpResponse = mock(HttpResponse.class);
+        final var httpResponse = mock(HttpResponse.class);
 
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()

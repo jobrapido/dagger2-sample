@@ -43,12 +43,30 @@ class NationalizeClientTest {
 
     @Test
     void shouldReturnParsedNationalityForSuccessfulHttpApiCall() throws IOException, InterruptedException {
-        HttpResponse httpResponse = mock(HttpResponse.class);
+        final var httpResponse = mock(HttpResponse.class);
 
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.OK);
         when(httpResponse.body())
-                .thenReturn("{\"name\":\"michael\",\"country\":[{\"country_id\":\"US\",\"probability\":0.09}, {\"country_id\":\"NZ\",\"probability\":0.04}]}");
+                .thenReturn("{\"name\":\"michael\",\"country\":[{\"country_id\":\"US\",\"probability\":0.09}]}");
+
+        when(httpClient.send(any(), any()))
+                .thenReturn(httpResponse);
+
+        Optional<Nationality> actualNationality = sut.nationalize("michael");
+
+        assertTrue(actualNationality.isPresent());
+        assertEquals(new Nationality("US", 0.09), actualNationality.get());
+    }
+
+    @Test
+    void shouldReturnNationalityWithHighestProbability() throws IOException, InterruptedException {
+        final var httpResponse = mock(HttpResponse.class);
+
+        when(httpResponse.statusCode())
+                .thenReturn(StatusCodes.OK);
+        when(httpResponse.body())
+                .thenReturn("{\"name\":\"michael\",\"country\":[{\"country_id\":\"NZ\",\"probability\":0.04}, {\"country_id\":\"US\",\"probability\":0.09}]}");
 
         when(httpClient.send(any(), any()))
                 .thenReturn(httpResponse);
@@ -61,7 +79,7 @@ class NationalizeClientTest {
 
     @Test
     void shouldReturnEmptyOptionalWhenHttpCallIsNotSuccessful() throws IOException, InterruptedException {
-        HttpResponse httpResponse = mock(HttpResponse.class);
+        final var httpResponse = mock(HttpResponse.class);
 
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()

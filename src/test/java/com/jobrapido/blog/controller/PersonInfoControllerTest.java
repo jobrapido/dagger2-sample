@@ -29,6 +29,7 @@ import static io.undertow.util.StatusCodes.NOT_FOUND;
 import static io.undertow.util.StatusCodes.OK;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -83,13 +84,13 @@ class PersonInfoControllerTest {
 
         HttpResponse<String> actualHttpResponse = httpClient.send(
                 HttpRequest
-                        .newBuilder(URI.create(format("%s/person?name=%s", httpTestBaseUrl, "Stefano"))).GET()
+                        .newBuilder(URI.create(format("%s/person?name=%s", httpTestBaseUrl, "TestName"))).GET()
                         .build(),
                 HttpResponse.BodyHandlers.ofString());
 
         assertEquals(OK, actualHttpResponse.statusCode());
         final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
-        assertEquals("Stefano", actualPerson.getName());
+        assertEquals("TestName", actualPerson.getName());
         assertEquals(new Gender(MALE, 0.9), actualPerson.getGender());
         assertEquals(new Nationality("us", 0.8), actualPerson.getNationality());
     }
@@ -104,6 +105,42 @@ class PersonInfoControllerTest {
                 HttpResponse.BodyHandlers.ofString());
 
         assertEquals(NOT_FOUND, actualHttpResponse.statusCode());
+    }
+
+    @Test
+    void shouldReturnNullGenderWhenGenderCouldNotBeResolved() throws IOException, InterruptedException {
+        HttpClient httpClient = HttpClient.newHttpClient();
+        doReturn(Optional.empty()).when(genderizeClient).genderize(anyString());
+
+        HttpResponse<String> actualHttpResponse = httpClient.send(
+                HttpRequest
+                        .newBuilder(URI.create(format("%s/person?name=%s", httpTestBaseUrl, "TestName"))).GET()
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(OK, actualHttpResponse.statusCode());
+        final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
+        assertEquals("TestName", actualPerson.getName());
+        assertNull(actualPerson.getGender());
+        assertEquals(new Nationality("us", 0.8), actualPerson.getNationality());
+    }
+
+    @Test
+    void shouldReturnNullNationalityWhenNationalityCouldNotBeResolved() throws IOException, InterruptedException {
+        HttpClient httpClient = HttpClient.newHttpClient();
+        doReturn(Optional.empty()).when(nationalizeClient).nationalize(anyString());
+
+        HttpResponse<String> actualHttpResponse = httpClient.send(
+                HttpRequest
+                        .newBuilder(URI.create(format("%s/person?name=%s", httpTestBaseUrl, "TestName"))).GET()
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(OK, actualHttpResponse.statusCode());
+        final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
+        assertEquals("TestName", actualPerson.getName());
+        assertEquals(new Gender(MALE, 0.9), actualPerson.getGender());
+        assertNull(actualPerson.getNationality());
     }
 
 }
