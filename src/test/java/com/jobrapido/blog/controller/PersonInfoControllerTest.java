@@ -1,24 +1,19 @@
 package com.jobrapido.blog.controller;
 
 import com.google.gson.Gson;
-import com.jobrapido.blog.client.GenderizeClient;
-import com.jobrapido.blog.client.NationalizeClient;
+import com.jobrapido.blog.ApplicationTestGraph;
+import com.jobrapido.blog.DaggerApplicationTestGraph;
 import com.jobrapido.blog.dto.Gender;
 import com.jobrapido.blog.dto.Nationality;
 import com.jobrapido.blog.dto.Person;
-import com.jobrapido.blog.utils.UndertowTestUtils;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
-import io.undertow.util.Headers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -35,32 +30,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 class PersonInfoControllerTest {
 
     private static String httpTestBaseUrl = "";
 
-    private static GenderizeClient genderizeClient;
-
-    private static NationalizeClient nationalizeClient;
-
-    private final static Gson gson = new Gson();
-
     private static PersonInfoController sut;
 
     private static Undertow server;
 
+    private static ApplicationTestGraph applicationTestGraph;
+
     @BeforeAll
     static void clazzSetUp() {
-        genderizeClient = mock(GenderizeClient.class);
-        nationalizeClient = mock(NationalizeClient.class);
+        applicationTestGraph = DaggerApplicationTestGraph.builder()
+                .build();
 
-        sut = new PersonInfoController(gson, genderizeClient, nationalizeClient);
+        sut = applicationTestGraph.personInfoController();
 
         server = buildServerForRoutes(Handlers
-                        .routing()
-                        .get("/person", sut));
+                .routing()
+                .get("/person", sut));
 
         server.start();
 
@@ -70,10 +60,10 @@ class PersonInfoControllerTest {
     @BeforeEach
     void setUp() {
         doReturn(Optional.of(new Gender(MALE, 0.9)))
-                .when(genderizeClient).genderize(anyString());
+                .when(applicationTestGraph.genderizeClient()).genderize(anyString());
 
         doReturn(Optional.of(new Nationality("us", 0.8)))
-                .when(nationalizeClient).nationalize(anyString());
+                .when(applicationTestGraph.nationalizeClient()).nationalize(anyString());
     }
 
     @AfterAll
@@ -94,7 +84,7 @@ class PersonInfoControllerTest {
         assertEquals(OK, actualHttpResponse.statusCode());
         assertEquals(Optional.of("application/json"),
                 actualHttpResponse.headers().firstValue("Content-Type"));
-        final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
+        final Person actualPerson = applicationTestGraph.gson().fromJson(actualHttpResponse.body(), Person.class);
         assertEquals("TestName", actualPerson.getName());
         assertEquals(new Gender(MALE, 0.9), actualPerson.getGender());
         assertEquals(new Nationality("us", 0.8), actualPerson.getNationality());
@@ -115,7 +105,8 @@ class PersonInfoControllerTest {
     @Test
     void shouldReturnNullGenderWhenGenderCouldNotBeResolved() throws IOException, InterruptedException {
         HttpClient httpClient = HttpClient.newHttpClient();
-        doReturn(Optional.empty()).when(genderizeClient).genderize(anyString());
+        doReturn(Optional.empty()).when(applicationTestGraph.genderizeClient())
+                .genderize(anyString());
 
         HttpResponse<String> actualHttpResponse = httpClient.send(
                 HttpRequest
@@ -124,7 +115,8 @@ class PersonInfoControllerTest {
                 HttpResponse.BodyHandlers.ofString());
 
         assertEquals(OK, actualHttpResponse.statusCode());
-        final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
+        final Person actualPerson = applicationTestGraph.gson()
+                .fromJson(actualHttpResponse.body(), Person.class);
         assertEquals("TestName", actualPerson.getName());
         assertNull(actualPerson.getGender());
         assertEquals(new Nationality("us", 0.8), actualPerson.getNationality());
@@ -133,7 +125,8 @@ class PersonInfoControllerTest {
     @Test
     void shouldReturnNullNationalityWhenNationalityCouldNotBeResolved() throws IOException, InterruptedException {
         HttpClient httpClient = HttpClient.newHttpClient();
-        doReturn(Optional.empty()).when(nationalizeClient).nationalize(anyString());
+        doReturn(Optional.empty()).when(applicationTestGraph.nationalizeClient())
+                .nationalize(anyString());
 
         HttpResponse<String> actualHttpResponse = httpClient.send(
                 HttpRequest
@@ -142,7 +135,7 @@ class PersonInfoControllerTest {
                 HttpResponse.BodyHandlers.ofString());
 
         assertEquals(OK, actualHttpResponse.statusCode());
-        final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
+        final Person actualPerson = applicationTestGraph.gson().fromJson(actualHttpResponse.body(), Person.class);
         assertEquals("TestName", actualPerson.getName());
         assertEquals(new Gender(MALE, 0.9), actualPerson.getGender());
         assertNull(actualPerson.getNationality());

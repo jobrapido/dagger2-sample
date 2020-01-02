@@ -12,13 +12,13 @@ public class ClientsModule {
 
     @Provides
     @Singleton
-    GenderizeClient genderizeClient(final HttpClient client, final Gson gson) {
+    protected GenderizeClient genderizeClient(final HttpClient client, final Gson gson) {
         return new GenderizeClient(client, gson);
     }
 
     @Provides
     @Singleton
-    NationalizeClient nationalizeClient(final HttpClient client, final Gson gson) {
+    protected NationalizeClient nationalizeClient(final HttpClient client, final Gson gson) {
         return new NationalizeClient(client, gson);
     }
 
