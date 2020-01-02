@@ -9,6 +9,7 @@ import com.jobrapido.blog.dto.Person;
 import com.jobrapido.blog.utils.UndertowTestUtils;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
+import io.undertow.util.Headers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +92,8 @@ class PersonInfoControllerTest {
                 HttpResponse.BodyHandlers.ofString());
 
         assertEquals(OK, actualHttpResponse.statusCode());
+        assertEquals(Optional.of("application/json"),
+                actualHttpResponse.headers().firstValue("Content-Type"));
         final Person actualPerson = gson.fromJson(actualHttpResponse.body(), Person.class);
         assertEquals("TestName", actualPerson.getName());
         assertEquals(new Gender(MALE, 0.9), actualPerson.getGender());

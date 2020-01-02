@@ -6,6 +6,7 @@ import com.jobrapido.blog.client.NationalizeClient;
 import com.jobrapido.blog.dto.Person;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
 
 import javax.inject.Inject;
@@ -38,12 +39,18 @@ public class PersonInfoController implements HttpHandler {
                 .map(Deque::getFirst)
                 .filter(s -> !s.isBlank());
 
-        nameParam.ifPresentOrElse(name -> exchange
-                        .setStatusCode(StatusCodes.OK)
-                        .getResponseSender()
-                        .send(gson.toJson(new Person(name,
-                                genderizeClient.genderize(name).orElse(null),
-                                nationalizeClient.nationalize(name).orElse(null)))),
-                () -> exchange.setStatusCode(StatusCodes.NOT_FOUND));
+        nameParam
+                .map(name -> new Person(name,
+                        genderizeClient.genderize(name).orElse(null),
+                        nationalizeClient.nationalize(name).orElse(null)))
+                .map(gson::toJson)
+                .ifPresentOrElse(jsonResponse -> {
+                            exchange.getResponseHeaders()
+                                    .add(Headers.CONTENT_TYPE, "application/json");
+                            exchange.setStatusCode(StatusCodes.OK)
+                                    .getResponseSender()
+                                    .send(jsonResponse);
+                        },
+                        () -> exchange.setStatusCode(StatusCodes.NOT_FOUND));
     }
 }
