@@ -5,8 +5,12 @@ import com.jobrapido.blog.dto.Gender;
 import io.undertow.util.StatusCodes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,11 +27,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class GenderizeClientTest {
 
     private ArgumentCaptor<HttpRequest> requestArgumentCaptor;
 
+    @Mock
     private HttpClient httpClient;
+
+    @Mock
+    private HttpResponse<String> httpResponse;
 
     private Gson gson = new Gson();
 
@@ -36,20 +45,17 @@ class GenderizeClientTest {
     @BeforeEach
     void setUp() {
         requestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-        httpClient = mock(HttpClient.class);
         sut = new GenderizeClient(httpClient, gson);
     }
 
     @Test
     void shouldReturnParsedGenderForSuccessfulHttpApiCall() throws IOException, InterruptedException {
-        final var httpResponse =  mock(HttpResponse.class);
-
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.OK);
         when(httpResponse.body())
                 .thenReturn("{\"name\": \"peter\", \"gender\": \"male\",\"probability\": 0.99,\"count\": 1}");
 
-        when(httpClient.send(any(), any()))
+        when(httpClient.send(any(), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(httpResponse);
 
         Optional<Gender> actualGender = sut.genderize("peter");
@@ -60,8 +66,6 @@ class GenderizeClientTest {
 
     @Test
     void shouldReturnEmptyOptionalWhenHttpCallIsNotSuccessful() throws IOException, InterruptedException {
-        final var httpResponse = mock(HttpResponse.class);
-
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create("http://test.com"))
@@ -72,7 +76,7 @@ class GenderizeClientTest {
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.BAD_REQUEST);
 
-        when(httpClient.send(any(), any()))
+        when(httpClient.send(any(), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(httpResponse);
 
         Optional<Gender> actualGender = sut.genderize("peter");

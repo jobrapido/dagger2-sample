@@ -5,7 +5,11 @@ import com.jobrapido.blog.dto.Nationality;
 import io.undertow.util.StatusCodes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,13 +26,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-//@ExtendWith(MockitoExtension.class)
-//TODO: check why @ExtendWith is not working
+@ExtendWith(MockitoExtension.class)
 class NationalizeClientTest {
 
     private ArgumentCaptor<HttpRequest> requestArgumentCaptor;
 
+    @Mock
     private HttpClient httpClient;
+
+    @Mock
+    private HttpResponse<String> httpResponse;
 
     private Gson gson = new Gson();
 
@@ -37,20 +44,17 @@ class NationalizeClientTest {
     @BeforeEach
     void setUp() {
         requestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-        httpClient = mock(HttpClient.class);
         sut = new NationalizeClient(httpClient, gson);
     }
 
     @Test
     void shouldReturnParsedNationalityForSuccessfulHttpApiCall() throws IOException, InterruptedException {
-        final var httpResponse = mock(HttpResponse.class);
-
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.OK);
         when(httpResponse.body())
                 .thenReturn("{\"name\":\"michael\",\"country\":[{\"country_id\":\"US\",\"probability\":0.09}]}");
 
-        when(httpClient.send(any(), any()))
+        when(httpClient.send(any(), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(httpResponse);
 
         Optional<Nationality> actualNationality = sut.nationalize("michael");
@@ -61,14 +65,12 @@ class NationalizeClientTest {
 
     @Test
     void shouldReturnNationalityWithHighestProbability() throws IOException, InterruptedException {
-        final var httpResponse = mock(HttpResponse.class);
-
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.OK);
         when(httpResponse.body())
                 .thenReturn("{\"name\":\"michael\",\"country\":[{\"country_id\":\"NZ\",\"probability\":0.04}, {\"country_id\":\"US\",\"probability\":0.09}]}");
 
-        when(httpClient.send(any(), any()))
+        when(httpClient.send(any(), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(httpResponse);
 
         Optional<Nationality> actualNationality = sut.nationalize("michael");
@@ -79,8 +81,6 @@ class NationalizeClientTest {
 
     @Test
     void shouldReturnEmptyOptionalWhenHttpCallIsNotSuccessful() throws IOException, InterruptedException {
-        final var httpResponse = mock(HttpResponse.class);
-
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create("http://test.com"))
@@ -91,7 +91,7 @@ class NationalizeClientTest {
         when(httpResponse.statusCode())
                 .thenReturn(StatusCodes.BAD_REQUEST);
 
-        when(httpClient.send(any(), any()))
+        when(httpClient.send(any(), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(httpResponse);
 
         Optional<Nationality> actualNationality = sut.nationalize("michael");
