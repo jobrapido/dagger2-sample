@@ -15,19 +15,19 @@ Java 11
 ### Running the Application
 
 ```
-	./gradlew run
+./gradlew run
 ```
 
 **Sample Request:**
 
 ```
-	GET http://localhost:8080/person?name=peter
+GET http://localhost:8080/person?name=peter
 ```
 
 **Sample Response:**
 
 ```
-	{"name":"peter","gender":{"gender":"male","probability":0.99},"nationality":{"country_id":"SK","probability":0.1245678651196634}}
+{"name":"peter","gender":{"gender":"male","probability":0.99},"nationality":{"country_id":"SK","probability":0.1245678651196634}}
 ```
 
 ​		
