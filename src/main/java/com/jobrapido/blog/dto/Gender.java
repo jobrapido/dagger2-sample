@@ -1,5 +1,6 @@
 package com.jobrapido.blog.dto;
 
+import com.google.common.base.Objects;
 import com.google.gson.annotations.SerializedName;
 
 public class Gender {
@@ -27,5 +28,19 @@ public class Gender {
 
     public double getProbability() {
         return probability;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Gender gender = (Gender) o;
+        return Double.compare(gender.probability, probability) == 0 &&
+                genderType == gender.genderType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(genderType, probability);
     }
 }

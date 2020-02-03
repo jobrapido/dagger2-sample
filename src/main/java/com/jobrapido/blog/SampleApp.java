@@ -1,22 +1,24 @@
 package com.jobrapido.blog;
 
-
-import com.jobrapido.blog.client.ClientsComponent;
-import com.jobrapido.blog.client.DaggerClientsComponent;
-import com.jobrapido.blog.dto.Gender;
-import com.jobrapido.blog.dto.Nationality;
-
-import java.util.Optional;
+import io.undertow.Handlers;
+import io.undertow.Undertow;
 
 public class SampleApp {
 
+    private static final int HTTP_SERVER_PORT = 8080;
+    private static final String HTTP_LISTENING_HOST = "0.0.0.0";
+
     public static void main(String... args) {
-        final ClientsComponent clientsComponent = DaggerClientsComponent.create();
+        final ApplicationGraph applicationGraph = DaggerApplicationGraph.create();
 
-        final Optional<Gender> stefanoGender = clientsComponent.genderizeClient().genderize("Stefano");
-        System.out.println("Gender: " + stefanoGender.orElseThrow().getGenderType());
+        final Undertow server = Undertow
+                .builder()
+                .addHttpListener(HTTP_SERVER_PORT, HTTP_LISTENING_HOST)
+                .setHandler(Handlers
+                                .routing()
+                                .get("/person", applicationGraph.personInfoController()))
+                .build();
 
-        final Optional<Nationality> nationality = clientsComponent.nationalizeClient().nationalize("Stefano");
-        System.out.println("Nationality: " + nationality.orElseThrow().getCountry());
+        server.start();
     }
 }
